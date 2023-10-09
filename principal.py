@@ -11,8 +11,8 @@ def principal():
         print(" ")
         print("-" * 100)
         print(f'{" " * 40}Menú de opciones:')
-        print("-" * 100)
-        print("\n1. Crear el archivo binario desde peajes-tp4.csv")
+        print("-" * 100 + "\n")
+        print("1. Crear el archivo binario desde peajes-tp4.csv")
 
         print("2. Cargar por teclado los datos de un ticket")
 
@@ -34,32 +34,25 @@ def principal():
         opc = input("Ingrese su elección: ")
 
         if opc == '1':
-            if not v_tickets:
-                v_tickets = crear_arreglo()
-            else:
-                op = input("\n* Advertencia: se borrarán los registros hechos * \n1 Continuar - 0 Volver: ")
-
-                while op not in "0 1":
-                    op = input("1 Continuar - 0 Volver: ")
-
-                if op == "1":
-                    v_tickets = crear_arreglo()
-                else:
-                    continue
+            crear_archivo()
         elif opc == "2":
-            cargar_ticket(v_tickets, v_registro_id_manual)
+            cit, patente, tipo_vehiculo, forma_pago, pais, distancia = pedir_datos()
+            agregar_ticket(cit, patente, tipo_vehiculo, forma_pago, pais, distancia)
         elif opc == "3":
-            mostrar_registros(v_tickets)
+            leer_binario()
         elif opc == "4":
-            buscar_patente_cabina(v_tickets)
+            p = input("Ingrese la patente: ")
+            mostrar_p_binario(p)
         elif opc == "5":
-            buscar_registro_id(v_tickets)
+            c = input("Ingrese el codigo: ")
+            buscar_c_binario(c)
         elif opc == "6":
-            mostrar_cantidad_patentes(v_tickets)
+            c = crear_matriz()
+            mostrar_matriz(c)
         elif opc == "7":
-            v_acumulador_importe = mostrar_acumulado_por_vehiculo(v_tickets)
+            pass
         elif opc == "8":
-            mostrar_mayor_porcentaje(v_acumulador_importe)
+            pass
         elif opc != "9":
             print("\n", " " * 29, "-" * 3, "Ingrese una opción correcta.", "-" * 3)
         
