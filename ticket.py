@@ -1,4 +1,3 @@
-from platform import system
 import pickle
 import os.path
 
@@ -54,6 +53,33 @@ class Ticket:
         return pais_patente[6]
 
 
+def mostrar_menu() -> None:
+    print(" ")
+    print("-" * 100)
+    print(f'{" " * 40}Menú de opciones:')
+    print("-" * 100 + "\n")
+    print("1. Crear el archivo binario desde 'peajes-tp4.csv'.")
+
+    print("2. Cargar por teclado los datos de un ticket.")
+
+    print(f"3. Mostrar todos los datos guardados.")
+
+    print(f"4. Buscar por patente y mostrar todos los registros encontrados.")
+
+    print(f"5. Buscar por Código de Identificación de Ticket. (Se muestra el primero encontrado)")
+
+    print(f"6. Mostrar tabla: cantidad de vehículos y las respectivas cabinas donde pasaron.")
+
+    print(f"7. Totalizar tickets por tipos de vehiculo y tickets por pais de cabina.")
+
+    print(f"8. Mostrar la distancia promedio desde la última cabina recorrida entre todos los vehículos del archivo "
+          f"binario. \n   Mostrar los tickets que superen el promedio en forma ascendente.")
+
+    print("9. Salir\n")
+
+    print("-" * 100)
+
+
 def str_toticket(linea):
     """
     Esta función recibe el string de cada registro del archivo binario y retorna el objeto Ticket.
@@ -84,24 +110,6 @@ def revisar_sin_registros(v_tickets):
     return False
 
 
-# Punto 1
-def dividir_linea(linea):
-    """
-    Esta función recorta el string de cada línea y devuelve cada tipo de dato.
-    :param linea: <str> registro de peaje
-    :return: (patente, tipo_vehiculo, forma_de_pago, pais_cabina, distancia)
-    """
-
-    registro_id = linea[0:10]
-    patente = linea[11:17] if linea[10] == " " else linea[10:17]
-    tipo_vehiculo = linea[17]
-    forma_pago = linea[18]
-    pais_cabina = linea[19]
-    distancia_km = linea[20:23]
-
-    return int(registro_id), patente, int(tipo_vehiculo), int(forma_pago), int(pais_cabina), float(distancia_km)
-
-
 def validar_rango(minimo, maximo, mensaje):
     """
     Solicita al usuario un valor dentro de un rango específico y verifica su elección.
@@ -122,7 +130,6 @@ def validar_rango(minimo, maximo, mensaje):
 
 
 # Punto 1
-
 def confirmar_datos():
     """
     Esta función verifica si existe un archivo grabado previamente para arrojar una advertencia al usuario.
@@ -204,6 +211,8 @@ def leer_binario():
         while archivo.tell() < size:
             ticket = pickle.load(archivo)
             print(ticket.datos())
+        archivo.close()
+        return 0
     else:
         return 1
 
@@ -213,16 +222,15 @@ def mostrar_p_binario(p):
     i = 0
     if os.path.exists(NOMBRE_ARCHIVO_BINARIO):
         size = os.path.getsize(NOMBRE_ARCHIVO_BINARIO)
-
         archivo = open(NOMBRE_ARCHIVO_BINARIO, "rb")
 
         while archivo.tell() < size:
             ticket = pickle.load(archivo)
-
             if p == ticket.patente:
                 i += 1
                 print(ticket)
-        print(f"Se encontraron {i} registros")
+        archivo.close()
+    print(f"Se encontraron {i} registros")
 
 
 # punto 5
@@ -238,34 +246,144 @@ def buscar_c_binario(c):
                 bandera = True
                 print(ticket)
                 break
+        archivo.close()
         if not bandera:
-            print("No se encontró el código buscado")
+            print("No se encontró el código buscado.")
+    else:
+        print("No hay datos guardados.")
 
 
 # punto 6
-
 def crear_matriz():
     m = [[0] * 3 for i in range(5)]
     if os.path.exists(NOMBRE_ARCHIVO_BINARIO):
         size = os.path.getsize(NOMBRE_ARCHIVO_BINARIO)
-
         archivo = open(NOMBRE_ARCHIVO_BINARIO, "rb")
-
         while archivo.tell() < size:
             ticket = pickle.load(archivo)
             m[int(ticket.pais_cabina)][int(ticket.tipo_vehiculo)] += 1
+        archivo.close()
+    else:
+        print("No hay datos guardados.")
     return m
 
 
 def mostrar_matriz(m):
-    paises = ["Argentina", "Bolivia", "Brasil", "Paraguay", "Uruguay"]
+    """
+    Crea una tabla de doble entrada. Tipos de vehiculos vs paises de peajes.
+    :param m: <list> Matriz de vehiculos (tipo vs paises)
+    :return: None
+    """
+    guiones = f"{'-'* 61}"
+    v_paises = ["Argentina", "Bolivia", "Brasil", "Paraguay", "Uruguay"]
     t_vehiculos = ['Motocicletas', 'Automóviles', 'Camiones']
+
+    # Cabecera
+    print("\n{:^61}".format("CRUCES POR PEAJES"))
+    print(guiones)
+    print("|{:^14}|{:^14}|{:^14}|{:^14}|".format("Paises", t_vehiculos[0], t_vehiculos[1], t_vehiculos[2]))
+    print(guiones)
+
+    # Cuerpo de tabla
     for pais_cabina in range(len(m)):
-        # Filas de matriz (1 vuelta por cada pais):
-        print(f"Pais de la cabina {paises[pais_cabina]}:")
+        linea = [] # Arreglo temporal al que agregamos los valores que se imprimen en cada linea de la tabla (3)
         for c in range(len(m[pais_cabina])):
-            # Tipos de vehiculo por cada pais:
-            print(f"    {t_vehiculos[c]}:  {m[pais_cabina][c]}")
+            linea.append(m[pais_cabina][c])
+        print("|{:^14}|{:^14}|{:^14}|{:^14}|".format(v_paises[pais_cabina], linea[0], linea[1], linea[2]))
+    print(guiones, "\n")
+
+
+# Punto 7
+def mostrar_totales(m):
+    v_paises = ["Argentina", "Bolivia", "Brasil", "Paraguay", "Uruguay"]
+    t_vehiculos = ['Motocicletas', 'Automóviles', 'Camiones']
+    a_tipos = [0] * 3
+    a_paises_cabina = [0] * 5
+
+    # Sumo valores a los 2 vectores acumuladores
+    for pais_cabina in range(len(m)):
+        for tipo in range(len(m[pais_cabina])):
+            a_paises_cabina[pais_cabina] += m[pais_cabina][tipo]
+            a_tipos[tipo] += m[pais_cabina][tipo]
+
+    # Imprimo datos
+    print("\n{:^31}".format("TOTALES"))
+    print(f"{'-' * 31}")
+    print("| Tipo de Veh. |{:^14}|".format("Total"))
+    print(f"{'-' * 31}")
+    for i in range(len(t_vehiculos)):
+        print("|{:^14}|{:^14}|".format(t_vehiculos[i],a_tipos[i]))
+    print(f"{'-' * 31}")
+
+    print(f"\n{'-' * 31}")
+    print("|{:^14}|{:^14}|".format("Pais", "Total"))
+    print(f"{'-' * 31}")
+    for i in range(len(v_paises)):
+        print("|{:^14}|{:^14}|".format(v_paises[i], a_paises_cabina[i]))
+    print(f"{'-' * 31}")
+
+
+def calcular_promedio_km():
+    total_km = 0
+    total_tickets = 0
+    if os.path.exists(NOMBRE_ARCHIVO_BINARIO):
+        size = os.path.getsize(NOMBRE_ARCHIVO_BINARIO)
+        archivo = open(NOMBRE_ARCHIVO_BINARIO, "rb")
+        while archivo.tell() < size:
+            ticket = pickle.load(archivo)
+            total_km += ticket.distancia_km
+            total_tickets += 1
+        archivo.close()
+        # ¿División entera o división común? -------------------------------------------------------
+        return total_km // total_tickets
+    else:
+        return -1
+
+
+def buscar_mayores_prom(prom):
+    tickets_mayores = []
+    # No validamos la existencia del archivo binario porque la validación se realiza al llamar la función.
+    size = os.path.getsize(NOMBRE_ARCHIVO_BINARIO)
+    archivo = open(NOMBRE_ARCHIVO_BINARIO, "rb")
+    while archivo.tell() < size:
+        ticket = pickle.load(archivo)
+        if ticket.distancia_km > prom:
+            # Insertar ticket al arreglo tickets_mayores de manera ordenada. De menor a mayor.
+            i = binary_search(tickets_mayores, ticket.distancia_km)
+            tickets_mayores[i:i] = [ticket]
+    archivo.close()
+    return tickets_mayores
+
+
+def binary_search(v, x):
+    # busqueda binaria... asume arreglo ordenado...
+    izq, der = 0, len(v) - 1
+    while izq <= der:
+        c = (izq + der) // 2
+        if x == v[c].distancia_km:
+            return c
+        if x < v[c].distancia_km:
+            der = c - 1
+        else:
+            izq = c + 1
+    # insertar el elemento en v[izq]
+    return izq
+
+
+def shell_sort(v):
+    n = len(v)
+    h = 1
+    while h <= n // 9:
+        h = 3 * h + 1
+    while h > 0:
+        for j in range(h, n):
+            y = v[j]
+            k = j - h
+            while k >= 0 and y < v[k]:
+                v[k + h] = v[k]
+                k -= h
+            v[k + h] = y
+        h //= 3
 
 
 def encontrar_idioma(primera_linea):
@@ -434,67 +552,6 @@ def mostrar_cantidad_patentes(v):
         print(f"{paises[i]}: {m_conteo[i]}")
 
 
-# Punto 7
-def calcular_importe(cabina_pais, tipo_vehiculo, forma_pago):
-    """
-    Calcula el importe final a pagar en el peaje
-    :param cabina_pais: <str> (0: Argentina - 1: Bolivia - 2: Brasil - 3: Paraguay - 4: Uruguay)
-    :param tipo_vehiculo: <str> (0: motocicleta, 1: automóvil, 2:camión)
-    :param forma_pago: <str> (1: manual, 2 telepeaje)
-    :return: <float> importe a pagar
-    """
-    peaje_general = 300
-    peaje_bolivia = 200
-    peaje_brasil = 400
-
-    importe_final = 0
-
-    if cabina_pais == 1:
-        importe_final += peaje_bolivia
-    elif cabina_pais == 2:
-        importe_final += peaje_brasil
-    else:
-        importe_final += peaje_general
-
-    if tipo_vehiculo == 0:
-        # Moto: descuento de 50%
-        importe_final *= 0.5
-    elif tipo_vehiculo == 2:
-        # Camión: recarga de 60%
-        importe_final *= 1.6
-    # Auto: sin recargos
-
-    # Descuento del 10% por telepeaje
-    if forma_pago == 2:
-        importe_final *= 0.9
-
-    return importe_final
-
-
-def calcular_vector_acumulador(v):
-    v_acumulador = [0] * 3
-
-    for ticket in v:
-        pos = ticket.tipo_vehiculo
-        v_acumulador[pos] += calcular_importe(ticket.pais_cabina, ticket.tipo_vehiculo, ticket.forma_pago)
-
-    return v_acumulador
-
-
-def mostrar_acumulado_por_vehiculo(v):
-    if revisar_sin_registros(v):
-        return
-
-    v_acumulador = calcular_vector_acumulador(v)
-    n = len(v_acumulador)
-
-    print(f"\n*** Monto acumulado por cada tipo de vehiculo ***\n")
-    for i in range(n):
-        print(f"{tipo_v[i]}: ${v_acumulador[i]}")
-
-    return v_acumulador
-
-
 # Punto 8
 def vehiculo_mayor_acumulado(v_acumulador):
     n = len(v_acumulador)
@@ -512,18 +569,6 @@ def vehiculo_mayor_acumulado(v_acumulador):
         porcentaje = round(monto_mayor * 100 / monto_total, 2)
 
     return pos_mayor, porcentaje
-
-
-def mostrar_mayor_porcentaje(v_acumulador):
-    if not v_acumulador:
-        print(f"\nCalcular el punto 7 previamente, por favor.")
-    else:
-        pos_mayor, porcentaje = vehiculo_mayor_acumulado(v_acumulador)
-        print(f"\n*** Mostrando información ***\n")
-
-        print(f"El tipo de vehiculo con mayor monto acumulado: ** {tipo_v[pos_mayor]} **\n\n"
-              f"Monto correspondiente: ${v_acumulador[pos_mayor]}\n"
-              f"Porcentaje sobre el total facturado: {porcentaje}%\n")
 
 
 # Punto 9
